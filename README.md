@@ -1,3 +1,27 @@
+# Watcher 분석 - 프런트
+
+## 모니터링
+
+### 디렉터리 구조 : 
+./학번/과제명/코드파일명/스냅샷 리스트
+
+<br>
+
+
+* 스냅샷 파일 이용
+    * 시간당 코드 사이즈 변화율 그래프
+    * 스냅샷 개수
+    * 과제 수행 시간
+    * 코드 사이즈 증감
+    * 코드 파일 확인
+
+
+* 컴파일 정보 수집
+    * 컴파일 횟수
+    * 컴파일 실행 시점
+    * 컴파일 결과
+
+    
 <!-- # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
