@@ -9,7 +9,8 @@ import {
   CardContent,
   Box,
   IconButton,
-  Chip
+  Chip,
+  Button
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -42,6 +43,8 @@ const Monitoring = () => {
   const [error, setError] = useState('');
   const { studentId } = useParams();
   const navigate = useNavigate();
+
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
 
   useEffect(() => {
     const fetchMonitoringData = async () => {
@@ -87,7 +90,7 @@ const Monitoring = () => {
     );
   }
 
-  if (!studentData || !studentData.submissionStats) {
+  if (!studentData) {
     return (
       <Container sx={{ mt: 4, textAlign: 'center' }}>
         <Typography>
@@ -97,15 +100,60 @@ const Monitoring = () => {
     );
   }
 
+  if (!selectedAssignment) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Paper elevation={3} sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
+              <ArrowBackIcon />
+            </IconButton>
+            <Typography variant="h5" gutterBottom>
+              {studentData.name} ({studentData.studentId}) - 과제 목록
+            </Typography>
+          </Box>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>과제명</TableCell>
+                  <TableCell>상태</TableCell>
+                  <TableCell>선택</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {studentData.assignments?.map((assignment) => (
+                  <TableRow key={assignment.id}>
+                    <TableCell>{assignment.name}</TableCell>
+                    <TableCell>{assignment.status}</TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="contained" 
+                        size="small" 
+                        onClick={() => setSelectedAssignment(assignment)}
+                      >
+                        선택
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
+          <IconButton onClick={() => setSelectedAssignment(null)} sx={{ mr: 2 }}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h5">
-            {studentData.name} ({studentData.studentId}) - 모니터링 데이터
+            {studentData.name} ({studentData.studentId}) - {selectedAssignment.name} 모니터링 데이터
           </Typography>
         </Box>
 
@@ -137,7 +185,7 @@ const Monitoring = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          {/* <Grid item xs={12} md={4}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -148,9 +196,9 @@ const Monitoring = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
+          </Grid> */}
 
-          {/* 제출 현황 도넛 차트 */}
+          {/* 제출 현황 도넛 차트
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
@@ -218,9 +266,9 @@ const Monitoring = () => {
                 </Box>
               </CardContent>
             </Card>
-          </Grid>
+          </Grid> */}
 
-          {/* 최근 제출 기록 */}
+          {/* 최근 제출 기록
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
@@ -263,14 +311,14 @@ const Monitoring = () => {
                 </TableContainer>
               </CardContent>
             </Card>
-          </Grid>
+          </Grid> */}
 
           {/* 시계열 그래프 */}
           <Grid item xs={12}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  시간별 활동 현황
+                  시간별 코드 변화율
                 </Typography>
                 <Box sx={{ height: 400 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -323,6 +371,10 @@ const Monitoring = () => {
               </CardContent>
             </Card>
           </Grid>
+
+       {/* 코드 파일별 스냅샷 목록 및 확인 추가*/}
+
+
         </Grid>
       </Paper>
     </Container>

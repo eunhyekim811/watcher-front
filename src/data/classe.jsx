@@ -5,7 +5,13 @@ export const mockClasses = [
       year: 2024,
       semester: 1,
       professorId: 2, // professor@jbnu.ac.kr
-      students: [
+        students: [ {
+          id: 1,
+          studentId: '201911111',
+          name: '김학생',
+          email: 'student@jbnu.ac.kr',
+          lastActive: '2024-03-15 14:30:00'
+        }, 
         {
           id: 8,
           studentId: '201918366',
@@ -41,6 +47,27 @@ export const mockClasses = [
   ];
   
   export const mockMonitoringData = {
+    8: { // studentId
+      name: '학생1',
+      studentId: '201918366',
+      totalCodeChanges: 'test ',
+      totalCompiles: 'test ',
+      assignments: [
+        {
+          id: '11',
+          name: 'hw11',
+          status: '완료',
+          description: '과제 1 설명',
+        },
+        {
+          id: '12',
+          name: 'hw12',
+          status: '진행 중',
+          description: '과제 2 설명',
+        },
+        // ... 더 많은 과제 ...
+      ]
+    },
     1: { // studentId
       name: '김학생',
       studentId: '201911111',
@@ -136,6 +163,21 @@ export const mockClasses = [
           codeChanges: 30,
           compiles: 10
         }
+      ], 
+      assignments: [
+        {
+          id: 'assignment1',
+          name: '과제 1',
+          status: '완료',
+          description: '과제 1 설명',
+        },
+        {
+          id: 'assignment2',
+          name: '과제 2',
+          status: '진행 중',
+          description: '과제 2 설명',
+        },
+        // ... 더 많은 과제 ...
       ]
     }
   }; 

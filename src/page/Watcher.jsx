@@ -33,6 +33,7 @@ const Watcher = () => {
     if (selectedClass) {
       // TODO: API에서 학생 목록 가져오기
       setStudents([
+        { id: 1, name: '학생1', codeChanges: 50, compileCount: 10, submissionResult: 'Pass' },
         { id: 8, name: '학생1', codeChanges: 50, compileCount: 10, submissionResult: 'Pass' },
         { id: 9, name: '학생2', codeChanges: 30, compileCount: 5, submissionResult: 'Fail' },
       ]);
