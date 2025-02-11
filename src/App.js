@@ -48,7 +48,7 @@ function App() {
               />
             </Routes>
           </Box>
-          </Router>
+        </Router>
       </AuthContext.Provider>
     </ThemeProvider>
   );

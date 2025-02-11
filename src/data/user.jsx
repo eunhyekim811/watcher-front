@@ -33,7 +33,7 @@ export const mockUsers = [
     }, 
     {
       id: 8,
-      studentId: '201918366',
+      studentId: '201918336',
       name: '학생1',
       email: '1111@jbnu.ac.kr',
       password: 'password123',

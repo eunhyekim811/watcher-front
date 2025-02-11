@@ -53,6 +53,7 @@ const StudentList = () => {
   }, [classId]);
 
   if (loading) {
+    console.log("studentlist loading");
     return (
       <Container sx={{ mt: 4, textAlign: 'center' }}>
         <CircularProgress />

@@ -14,7 +14,7 @@ export const mockClasses = [
         }, 
         {
           id: 8,
-          studentId: '201918366',
+          studentId: '201918336',
           name: '학생1',
           email: '1111@jbnu.ac.kr',
           lastActive: '2024-03-15 14:30:00'
@@ -49,7 +49,7 @@ export const mockClasses = [
   export const mockMonitoringData = {
     8: { // studentId
       name: '학생1',
-      studentId: '201918366',
+      studentId: '201918336',
       totalCodeChanges: 'test ',
       totalCompiles: 'test ',
       assignments: [

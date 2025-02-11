@@ -35,6 +35,7 @@ const ClassList = () => {
         setClasses(mockClasses);
       } catch (err) {
         setError('수업 목록을 불러오는 중 오류가 발생했습니다.');
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -44,6 +45,7 @@ const ClassList = () => {
   }, []);
 
   if (loading) {
+    console.log("classlist loading");
     return (
       <Container sx={{ mt: 4, textAlign: 'center' }}>
         <CircularProgress />

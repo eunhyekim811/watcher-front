@@ -9,8 +9,9 @@ import {
   CardContent,
   Box,
   IconButton,
-  Chip,
-  Button
+  Button,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -22,10 +23,7 @@ import {
   CartesianGrid, 
   Tooltip, 
   Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
+  ResponsiveContainer
 } from 'recharts';
 import { mockMonitoringData } from '../data/classe';
 import {
@@ -37,6 +35,12 @@ import {
   TableRow,
 } from '@mui/material';
 
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
+const colors = [
+  "#8884d8", "#82ca9d", "#ff7300", "#ff0000", "#00ff00", 
+  "#ff00ff", "#00ffff", "#8a2be2", "#ff4500", "#2e8b57"
+];
+
 const Monitoring = () => {
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +49,12 @@ const Monitoring = () => {
   const navigate = useNavigate();
 
   const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [codeFiles, setCodeFiles] = useState([]); // 코드 파일 목록
+  const [selectedCodeFile, setSelectedCodeFile] = useState(""); // 선택된 코드 파일
+  const [snapshots, setSnapshots] = useState([]); // 스냅샷 목록
+  const [selectedSnapshot, setSelectedSnapshot] = useState(""); // 선택된 스냅샷 파일
+  const [fileContent, setFileContent] = useState(""); // 파일 내용
+  const [graphData, setGraphData] = useState([]); // 스냅샷 크기 변화 데이터
 
   useEffect(() => {
     const fetchMonitoringData = async () => {
@@ -72,7 +82,71 @@ const Monitoring = () => {
     fetchMonitoringData();
   }, [studentId]);
 
+  useEffect(() => {
+    if (selectedAssignment) {
+      fetch(`${backendUrl}/graphdata?student_id=${studentData.studentId}&assignment_name=${selectedAssignment.name}`)
+        .then(response => response.json())
+        .then(data => {
+          const trends = data.snapshot_trends || {};
+          const formattedData = [];
+          Object.keys(trends).forEach(codeFile => {
+            trends[codeFile].forEach(entry => {
+              formattedData.push({
+                timestamp: new Date(entry.timestamp),
+                size: entry.size,
+                codeFile, 
+              });
+            });
+          });
+          setGraphData(formattedData);
+          console.log("그래프 데이터: ", formattedData);
+        })
+        .catch(error => {
+          console.log(backendUrl);
+          console.error('Error fetching graph data:', error);
+        });
+
+      fetch(`${backendUrl}/codes?student_id=${studentData.studentId}&assignment_name=${selectedAssignment.name}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          setCodeFiles(data.code_files || []);
+        })
+        .catch(error => {
+          console.error('Error fetching code list:', error);
+        });
+    }
+  }, [selectedAssignment, studentData]);
+
+  useEffect(() => {
+    if (selectedCodeFile) {
+      fetch(`${backendUrl}/snapshots?student_id=${studentData.studentId}&assignment_name=${selectedAssignment.name}&code_file_name=${selectedCodeFile}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          setSnapshots(data.snapshots || []);
+        })
+        .catch(error => {
+          console.error('Error fetching snapshots:', error);
+        });
+    }
+  }, [selectedCodeFile, studentData, selectedAssignment]);
+
+  useEffect(() => {
+    if (selectedSnapshot) {
+      fetch(`${backendUrl}/content?student_id=${studentData.studentId}&assignment_name=${selectedAssignment.name}&code_file_name=${selectedCodeFile}&snapshot_name=${selectedSnapshot}`)
+        .then(response => response.json())
+        .then(data => {
+          setFileContent(data.content || "파일을 불러올 수 없습니다.");
+        })
+        .catch(error => {
+          console.error('Error fetching snapshot content:', error);
+        });
+    }
+  }, [selectedSnapshot, studentData, selectedAssignment, selectedCodeFile]);
+
   if (loading) {
+    console.log("monitoring lodaing");
     return (
       <Container sx={{ mt: 4, textAlign: 'center' }}>
         <CircularProgress />
@@ -185,134 +259,6 @@ const Monitoring = () => {
             </Card>
           </Grid>
 
-          {/* <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  정답 제출
-                </Typography>
-                <Typography variant="h4">
-                  {studentData.correctSubmissions}회
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid> */}
-
-          {/* 제출 현황 도넛 차트
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  문제 제출 현황
-                </Typography>
-                <Box sx={{ 
-                  height: 300, 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <Box sx={{ width: '60%', height: '100%' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={studentData.submissionStats.stats}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {studentData.submissionStats.stats.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          formatter={(value, name) => [`${value}회`, name]}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </Box>
-                  <Box sx={{ 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1.5,
-                    width: '40%',
-                    pl: 2
-                  }}>
-                    {studentData.submissionStats.stats.map((entry, index) => (
-                      <Box 
-                        key={`legend-${index}`}
-                        sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center',
-                          gap: 1
-                        }}
-                      >
-                        <Box 
-                          sx={{ 
-                            width: 12, 
-                            height: 12, 
-                            backgroundColor: entry.color,
-                            borderRadius: '50%'
-                          }} 
-                        />
-                        <Typography variant="body2">
-                          {entry.name} ({entry.value}회)
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid> */}
-
-          {/* 최근 제출 기록
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  최근 제출 기록
-                </Typography>
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>문제</TableCell>
-                        <TableCell>제출 시간</TableCell>
-                        <TableCell>상태</TableCell>
-                        <TableCell>실행시간</TableCell>
-                        <TableCell>메모리</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {studentData.recentSubmissions?.map((submission) => (
-                        <TableRow key={submission.id}>
-                          <TableCell>{submission.problemName}</TableCell>
-                          <TableCell>{submission.submitTime}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={submission.status}
-                              size="small"
-                              color={
-                                submission.status === '정답' ? 'success' :
-                                submission.status === '오답' ? 'error' :
-                                submission.status === '컴파일 에러' ? 'warning' : 'info'
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>{submission.runtime}</TableCell>
-                          <TableCell>{submission.memory}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          </Grid> */}
-
           {/* 시계열 그래프 */}
           <Grid item xs={12}>
             <Card>
@@ -322,25 +268,46 @@ const Monitoring = () => {
                 </Typography>
                 <Box sx={{ height: 400 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={studentData.timeSeriesData}>
+                    <LineChart data={graphData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis 
                         dataKey="timestamp" 
+                        type="number"
+                        scale="time"
+                        domain={['dataMin', 'dataMax']}
                         tick={{ fontSize: 12 }}
+                        // tickFormatter={(timestamp) => timestamp.toLocaleString()}
+                        tickFormatter={(timestamp) => {
+                          return timestamp.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+                        }}
                         tickMargin={10}
                       />
-                      <YAxis 
+                      <YAxis
                         tick={{ fontSize: 12 }}
                         tickMargin={10}
+                        scale="log"
+                        allowDataOverflow={true}
+                        domain={[1, 'dataMax']}
                       />
                       <Tooltip 
-                        formatter={(value, name) => [
-                          `${value}회`,
-                          name === 'codeChanges' ? '코드 변경' : '컴파일'
-                        ]}
-                        labelFormatter={(label) => `${label}`}
+                        // formatter={(value, name) => [
+                        //   `${name} - ${value}`,
+                        // ]}
+                        // labelFormatter={(label) => `${label}`}
+                        content={({ payload, label }) => {
+                          return (
+                            <div className="custom-tooltip" style={{ background: "white", padding: "10px", border: "1px solid #ccc" }}>
+                              <p className="label">{new Date(label).toLocaleString("ko-KR")}</p>
+                              {payload.map((entry, index) => (
+                                <p key={index} style={{ color: entry.color }}>
+                                  {entry.name}: {entry.value}
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        }}
                       />
-                      <Legend 
+                      {/* <Legend 
                         verticalAlign="top" 
                         height={36}
                         formatter={(value) => 
@@ -350,21 +317,25 @@ const Monitoring = () => {
                       <Line 
                         type="monotone" 
                         dataKey="codeChanges" 
-                        name="코드 변경" 
-                        stroke="#8884d8" 
+                       name="코드 변경" 
+                         stroke="#8884d8" 
                         strokeWidth={2}
                         dot={{ strokeWidth: 2 }}
                         activeDot={{ r: 6, strokeWidth: 2 }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="compiles" 
-                        name="컴파일" 
-                        stroke="#82ca9d" 
-                        strokeWidth={2}
-                        dot={{ strokeWidth: 2 }}
-                        activeDot={{ r: 6, strokeWidth: 2 }}
-                      />
+                      /> */}
+                      <Legend />
+                      {Array.from(new Set(graphData.map((d) => d.codeFile))).map((codeFile, index) => (
+                        <Line 
+                          key={codeFile}
+                          type="monotone"
+                          dataKey="size"
+                          data={graphData.filter((d) => d.codeFile === codeFile)}
+                          name={codeFile}
+                          stroke={colors[index % colors.length]}
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                        />
+                      ))}
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -372,9 +343,65 @@ const Monitoring = () => {
             </Card>
           </Grid>
 
-       {/* 코드 파일별 스냅샷 목록 및 확인 추가*/}
+       {/* 코드 파일별 스냅샷 목록 */}
+       <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                코드 파일 목록
+              </Typography>
+              <Select
+                value={selectedCodeFile}
+                onChange={(e) => setSelectedCodeFile(e.target.value)}
+                fullWidth
+              >
+                {codeFiles.map((file) => (
+                  <MenuItem key={file} value={file}>
+                    {file}
+                  </MenuItem>
+                ))}
+              </Select>
+            </CardContent>
+          </Card>
+        </Grid>
 
+        {/* 스냅샷 목록 */}
+        {selectedCodeFile && (
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {selectedCodeFile}의 스냅샷 목록
+                </Typography>
+                <Select
+                  value={selectedSnapshot}
+                  onChange={(e) => setSelectedSnapshot(e.target.value)}
+                  fullWidth
+                >
+                  {snapshots.map((snapshot) => (
+                    <MenuItem key={snapshot.timestamp} value={snapshot.timestamp}>
+                      {`Timestamp: ${snapshot.timestamp} - Size: ${snapshot.size} bytes`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
 
+        {/* 스냅샷 파일 내용 표시 */}
+        {selectedSnapshot && (
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">스냅샷 파일 내용</Typography>
+                <Box sx={{ whiteSpace: "pre-wrap", backgroundColor: "#f4f4f4", p: 2 }}>
+                  {fileContent}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
         </Grid>
       </Paper>
     </Container>
