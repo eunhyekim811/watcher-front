@@ -10,7 +10,9 @@ import {
   Box,
   IconButton,
   Chip,
-  Fade
+  Fade,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -37,6 +39,26 @@ import {
   TableRow,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import axios from 'axios';
+
+const backendUrl = process.env.REACT_APP_WATCHER_BACKEND_URL;
+
+const assignments = [
+  {
+    assignmentId: '1',
+    assignmentName: 'hw1',
+    assignmentDescription: '첫 번째 과제 설명',
+    kickoffDate: '2025-03-01T10:00:00',
+    deadlineDate: '2025-03-10T23:59:59'
+  },
+  {
+    assignmentId: '2',
+    assignmentName: 'hw2',
+    assignmentDescription: '두 번째 과제 설명',
+    kickoffDate: '2025-04-01T10:00:00',
+    deadlineDate: '2025-04-10T23:59:59'
+  },
+]
 
 const MonitoringData = () => {
   const [studentData, setStudentData] = useState(null);
@@ -45,6 +67,7 @@ const MonitoringData = () => {
   const { studentId } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
+  const [selectedAssignment, setSelectedAssignment] = useState('');
 
   useEffect(() => {
     const fetchMonitoringData = async () => {
@@ -59,6 +82,7 @@ const MonitoringData = () => {
         const data = mockMonitoringData[studentId];
         if (data) {
           setStudentData(data);
+          setSelectedAssignment(assignments[assignments.length - 1].assignmentId);
         } else {
           setError('학생 데이터를 찾을 수 없습니다.');
         }
@@ -71,6 +95,10 @@ const MonitoringData = () => {
 
     fetchMonitoringData();
   }, [studentId]);
+
+  const handleAssignmentChange = (event) => {
+    setSelectedAssignment(event.target.value);
+  };
 
   if (loading) {
     return (
@@ -117,24 +145,38 @@ const MonitoringData = () => {
             borderRadius: 0
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <IconButton 
-              onClick={() => navigate(-1)} 
-              sx={{ 
-                mr: 2,
-                '&:hover': {
-                  backgroundColor: (theme) => theme.palette.action.hover
-                }
-              }}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton 
+                onClick={() => navigate(-1)} 
+                sx={{ 
+                  mr: 2,
+                  '&:hover': {
+                    backgroundColor: (theme) => theme.palette.action.hover
+                  }
+                }}
+              >
+                <ArrowBackIcon />
+              </IconButton>
+              <Typography 
+                variant="h5"
+                sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
+              >
+                {studentData.name} ({studentData.studentId}) - 모니터링 데이터
+              </Typography>
+            </Box>
+            <Select
+              value={selectedAssignment}
+              onChange={handleAssignmentChange}
+              displayEmpty
+              sx={{ minWidth: 120 }}
             >
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography 
-              variant="h5"
-              sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-            >
-              {studentData.name} ({studentData.studentId}) - 모니터링 데이터
-            </Typography>
+              {assignments.map((assignment) => (
+                <MenuItem key={assignment.assignmentId} value={assignment.assignmentId}>
+                  {assignment.assignmentName}
+                </MenuItem>
+              ))}
+            </Select>
           </Box>
 
           <Grid container spacing={3}>

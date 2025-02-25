@@ -11,7 +11,8 @@ const WatcherPage = () => {
       <Route path="/" element={<ClassList />} />
       <Route path="/class/:courseCode" element={<ClassDetail />} />
       <Route path="/class/:courseCode/assignment/:assignmentId" element={<AssignmentDetail />} />
-      <Route path="/monitoring/:studentId" element={<MonitoringData />} />
+      <Route path="/class/:courseCode/monitoring/:studentId" element={<MonitoringData />} />
+      {/* <Route path="/monitoring/:studentId" element={<MonitoringData />} /> */}
     </Routes>
   );
 };

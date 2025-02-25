@@ -804,7 +804,7 @@ const ClassDetail = () => {
                               variant="outlined"
                               size="small"
                               startIcon={<MonitorIcon sx={{ fontSize: '1rem' }} />}
-                              onClick={() => navigate(`/watcher/monitoring/${student.userId}`)}
+                              onClick={() => navigate(`/watcher/class/${courseCode}/monitoring/${student.userId}`)}
                               sx={{ 
                                 fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif",
                                 fontSize: '0.75rem',
