@@ -38,6 +38,15 @@ const Navbar = () => {
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
 
+    const hardcodedUser = {
+    id: 2,
+    email: 'professor@jbnu.ac.kr',
+    password: 'password123',
+    name: '이교수',
+    employeeId: 'P12345',
+    role: 'PROFESSOR'
+  };
+
   useEffect(() => {
     const checkProfile = async () => {
       if (!user) {
@@ -46,11 +55,12 @@ const Navbar = () => {
       }
       
       try {
-        const response = await auth.getUserProfile();
-        console.log('response.data: ', response.data);
-        const { studentNum, name } = response.data;
-        setIsProfileSet(Boolean(studentNum && name));
-        setProfileData({ studentNum, name });
+        // const response = await auth.getUserProfile();
+        // console.log('response.data: ', response.data);
+        // const { studentNum, name } = response.data;
+        setIsProfileSet(true);
+        setProfileData({ studentNum: hardcodedUser.employeeId, name: hardcodedUser.name });
+        console.log('profileData: ', profileData);
       } catch (error) {
         console.error('프로필 확인 실패:', error);
         setIsProfileSet(false);

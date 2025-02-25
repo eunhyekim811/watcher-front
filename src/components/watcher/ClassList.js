@@ -64,32 +64,69 @@ const ClassList = () => {
   const terms = [...new Set(classes.map(course => course.courseTerm))].sort();
 
   useEffect(() => {
-    const fetchClasses = async () => {
-      try {
-        const response = await axios.get('/api/users/me/courses');
-        setClasses(response.data);
-        
-        // 현재 날짜 기준으로 연도와 학기 설정
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth() + 1; // getMonth()는 0-11 반환
-        
-        // 9-12월은 2학기, 나머지(1-8월)는 1학기
-        const currentTerm = currentMonth >= 9 ? 2 : 1;
-        
-        // 현재 연도와 학기로 설정
-        setSelectedYear(currentYear);
-        setSelectedTerm(currentTerm);
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('수업 목록 조회 실패:', error);
-        setError('수업 목록을 불러오는데 실패했습니다.');
-        setLoading(false);
-      }
-    };
+      // API 호출 대신 직접 데이터를 설정
+    const sampleClasses = [
+      {
+        courseId: 1,
+        courseCode: 'CSE1001',
+        courseName: '운영체제',
+        courseYear: 2025,
+        courseTerm: 1,
+        courseClss: '1',
+      },
+      {
+        courseId: 2,
+        courseCode: 'CSE1002',
+        courseName: '인공지능',
+        courseYear: 2025,
+        courseTerm: 1,
+        courseClss: '1',
+      },
+      // 필요한 만큼 더 추가
+    ];
 
-    fetchClasses();
+    setClasses(sampleClasses);
+    console.log('sampleClasses: ', sampleClasses);
+
+    // 현재 날짜 기준으로 연도와 학기 설정
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // getMonth()는 0-11 반환
+
+    // 9-12월은 2학기, 나머지(1-8월)는 1학기
+    const currentTerm = currentMonth >= 9 ? 2 : 1;
+
+    // 현재 연도와 학기로 설정
+    setSelectedYear(currentYear);
+    setSelectedTerm(currentTerm);
+
+    setLoading(false);
+    // const fetchClasses = async () => {
+    //   try {
+    //     const response = await axios.get('/api/users/me/courses');
+    //     setClasses(response.data);
+        
+    //     // 현재 날짜 기준으로 연도와 학기 설정
+    //     const currentDate = new Date();
+    //     const currentYear = currentDate.getFullYear();
+    //     const currentMonth = currentDate.getMonth() + 1; // getMonth()는 0-11 반환
+        
+    //     // 9-12월은 2학기, 나머지(1-8월)는 1학기
+    //     const currentTerm = currentMonth >= 9 ? 2 : 1;
+        
+    //     // 현재 연도와 학기로 설정
+    //     setSelectedYear(currentYear);
+    //     setSelectedTerm(currentTerm);
+        
+    //     setLoading(false);
+    //   } catch (error) {
+    //     console.error('수업 목록 조회 실패:', error);
+    //     setError('수업 목록을 불러오는데 실패했습니다.');
+    //     setLoading(false);
+    //   }
+    // };
+
+    // fetchClasses();
   }, []);
 
   // 필터링된 강의 목록

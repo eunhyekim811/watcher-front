@@ -34,6 +34,19 @@ export const mockClasses = [
 ];
 
 export const mockMonitoringData = {
+  "1": {  
+    name: "학생A",
+    studentId: "testA@jbnu.ac.kr",
+    totalCodeChanges: 'CodeChanges',
+    totalCompiles: 'Compiles'
+  }, 
+  "2": {  
+    name: "학생B",
+    studentId: "testB@jbnu.ac.kr",
+    totalCodeChanges: 'CodeChanges',
+    totalCompiles: 'Compiles'
+  }, 
+
   "19": {  // userId를 key로 사용
     name: "test@jbnu.ac.kr",
     studentId: "test@jbnu.ac.kr",

@@ -71,6 +71,6 @@ export const getDefaultRoute = (role) => {
     case 'STUDENT':
       return '/webide';
     default:
-      return '/login';
+      return '/watcher';
   }
 }; 

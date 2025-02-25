@@ -5,6 +5,15 @@ import { jwtDecode } from 'jwt-decode';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const hardcodedUser = {
+    id: 2,
+    email: 'professor@jbnu.ac.kr',
+    password: 'password123',
+    name: '이교수',
+    employeeId: 'P12345',
+    role: 'PROFESSOR'
+  };
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
@@ -12,39 +21,52 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       setLoading(true);
-      const token = sessionStorage.getItem('jwt');
-      
-      if (!token) {
-        console.log('AuthContext: 토큰 없음');
-        setUser(null);
-        return;
-      }
 
-      try {
-        const decodedToken = jwtDecode(token);
-        console.log('AuthContext: 디코딩된 토큰:', decodedToken);
-        console.log('AuthContext: 사용자 역할:', decodedToken.role);
+      // 하드코딩된 사용자 적용
+      setUser({
+        email: hardcodedUser.email,
+        role: hardcodedUser.role
+      });
 
-        setUser({
-          email: decodedToken.sub,
-          role: decodedToken.role
-        });
-        console.log('AuthContext: 설정된 사용자:', {
-          email: decodedToken.sub,
-          role: decodedToken.role
-        });
-      } catch (error) {
-        console.error('AuthContext: 토큰 검증 실패:', error);
-        setUser(null);
-        sessionStorage.removeItem('jwt');
-      }
     } catch (error) {
       console.error('AuthContext: 인증 확인 실패:', error);
       setUser(null);
-      sessionStorage.removeItem('jwt');
     } finally {
       setLoading(false);
     }
+    //   const token = sessionStorage.getItem('jwt');
+      
+    //   if (!token) {
+    //     console.log('AuthContext: 토큰 없음');
+    //     setUser(null);
+    //     return;
+    //   }
+
+    //   try {
+    //     const decodedToken = jwtDecode(token);
+    //     console.log('AuthContext: 디코딩된 토큰:', decodedToken);
+    //     console.log('AuthContext: 사용자 역할:', decodedToken.role);
+
+    //     setUser({
+    //       email: decodedToken.sub,
+    //       role: decodedToken.role
+    //     });
+    //     console.log('AuthContext: 설정된 사용자:', {
+    //       email: decodedToken.sub,
+    //       role: decodedToken.role
+    //     });
+    //   } catch (error) {
+    //     console.error('AuthContext: 토큰 검증 실패:', error);
+    //     setUser(null);
+    //     sessionStorage.removeItem('jwt');
+    //   }
+    // } catch (error) {
+    //   console.error('AuthContext: 인증 확인 실패:', error);
+    //   setUser(null);
+    //   sessionStorage.removeItem('jwt');
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   useEffect(() => {
@@ -52,13 +74,17 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = () => {
-    auth.login();
+    // auth.login();
+    setUser({
+      email: hardcodedUser.email,
+      role: hardcodedUser.role
+    })
   };
 
   const logout = () => {
-    sessionStorage.removeItem('jwt');
+    // sessionStorage.removeItem('jwt');
     setUser(null);
-    auth.logout();
+    // auth.logout();
   };
 
   const value = {

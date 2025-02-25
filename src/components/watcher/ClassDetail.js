@@ -385,6 +385,7 @@ const ClassDetail = () => {
     const params = new URLSearchParams(location.search);
     return params.get('tab') || 'students'; // 기본값은 students
   });
+  const [selectedMetric, setSelectedMetric] = useState('changes');
 
   // 탭 변경 핸들러
   const handleTabChange = (event, newValue) => {
@@ -398,17 +399,55 @@ const ClassDetail = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const coursesResponse = await api.get('/api/users/me/courses/details');
-        const foundCourse = coursesResponse.data.find(c => c.courseCode === courseCode);
+        // const coursesResponse = await api.get('/api/users/me/courses/details');
+        // const foundCourse = coursesResponse.data.find(c => c.courseCode === courseCode);
         
-        if (!foundCourse) {
-          throw new Error('강의를 찾을 수 없습니다.');
-        }
+        // if (!foundCourse) {
+        //   throw new Error('강의를 찾을 수 없습니다.');
+        // }
+
+        const foundCourse = {
+          courseCode: courseCode,
+          courseId: '1',
+          courseName: '운영체제',
+          assignments: [
+            {
+              assignmentId: '1',
+              assignmentName: 'hw1',
+              assignmentDescription: '첫 번째 과제 설명',
+              kickoffDate: '2025-03-01T10:00:00',
+              deadlineDate: '2025-03-10T23:59:59'
+            },
+            {
+              assignmentId: '2',
+              assignmentName: 'hw2',
+              assignmentDescription: '두 번째 과제 설명',
+              kickoffDate: '2025-04-01T10:00:00',
+              deadlineDate: '2025-04-10T23:59:59'
+            },
+          ]
+        };
 
         setCourse(foundCourse);
         setAssignments(foundCourse.assignments || []);
         
-        const studentsResponse = await api.get(`/api/courses/${foundCourse.courseId}/users`);
+        // const studentsResponse = await api.get(`/api/courses/${foundCourse.courseId}/users`);
+        const studentsResponse = {
+          data: [
+            {
+              userId: '1',
+              email: 'testA@jbnu.ac.kr',
+              name: '학생A',
+              studentNum: '202212112'
+            },
+            {
+              userId: '2',
+              email: 'testB@jbnu.ac.kr',
+              name: '학생B',
+              studentNum: '202012180'
+            }
+          ]
+        };
 
         setStudents(studentsResponse.data);
         setLoading(false);
@@ -926,7 +965,12 @@ const ClassDetail = () => {
           {/* 통계 탭 */}
           {currentTab === 'statistics' && (
             <Box>
-              <Typography>통계 데이터가 준비중입니다.</Typography>
+              {/* <Typography>통계 데이터가 준비중입니다.</Typography> */}
+              <MetricSelector 
+                selectedMetric={selectedMetric} 
+                onMetricChange={setSelectedMetric}
+              />
+              <MonitoringDashboard />
             </Box>
           )}
 

@@ -8,12 +8,22 @@ const PrivateRoute = ({ roles, children }) => {
   const [isProfileSet, setIsProfileSet] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const hardcodedUser = {
+    id: 2,
+    email: 'professor@jbnu.ac.kr',
+    password: 'password123',
+    name: '이교수',
+    employeeId: 'P12345',
+    role: 'PROFESSOR'
+  };
+
   useEffect(() => {
     const checkProfile = async () => {
       try {
-        const response = await auth.getUserProfile();
-        const { studentNum, name } = response.data;
-        setIsProfileSet(Boolean(studentNum && name));
+        // const response = await auth.getUserProfile();
+        // const { studentNum, name } = response.data;
+        // setIsProfileSet(Boolean(studentNum && name));
+        setIsProfileSet(true);
       } catch (error) {
         console.error('프로필 확인 실패:', error);
         setIsProfileSet(false);
@@ -33,14 +43,14 @@ const PrivateRoute = ({ roles, children }) => {
     return null; // 또는 로딩 스피너
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  // if (!isAuthenticated) {
+  //   return <Navigate to="/login" replace />;
+  // }
 
-  // 프로필이 설정되지 않았고, 현재 경로가 profile-setup이 아닌 경우
-  if (!isProfileSet && window.location.pathname !== '/profile-setup') {
-    return <Navigate to="/profile-setup" replace />;
-  }
+  // // 프로필이 설정되지 않았고, 현재 경로가 profile-setup이 아닌 경우
+  // if (!isProfileSet && window.location.pathname !== '/profile-setup') {
+  //   return <Navigate to="/profile-setup" replace />;
+  // }
 
   // 권한 체크
   if (roles && roles.length > 0 && !roles.includes(user?.role)) {

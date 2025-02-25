@@ -90,7 +90,7 @@ const MonitoringData = () => {
     );
   }
 
-  if (!studentData || !studentData.submissionStats) {
+  if (!studentData) {
     return (
       <Container sx={{ mt: 4, textAlign: 'center' }}>
         <Typography>
@@ -173,7 +173,7 @@ const MonitoringData = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            {/* <Grid item xs={12} md={4}>
               <Card>
                 <CardContent>
                   <Typography 
@@ -188,10 +188,10 @@ const MonitoringData = () => {
                   </Typography>
                 </CardContent>
               </Card>
-            </Grid>
+            </Grid> */}
 
             {/* 제출 현황 도넛 차트 */}
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <Card>
                 <CardContent>
                   <Typography 
@@ -262,10 +262,10 @@ const MonitoringData = () => {
                   </Box>
                 </CardContent>
               </Card>
-            </Grid>
+            </Grid> */}
 
             {/* 최근 제출 기록 */}
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <Card>
                 <CardContent>
                   <Typography 
@@ -349,7 +349,8 @@ const MonitoringData = () => {
                   </TableContainer>
                 </CardContent>
               </Card>
-            </Grid>
+            </Grid>  */}
+
 
             {/* 시계열 그래프 */}
             <Grid item xs={12}>
