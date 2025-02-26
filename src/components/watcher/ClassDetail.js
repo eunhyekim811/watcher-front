@@ -149,14 +149,10 @@ const MonitoringDashboard = () => {
 
   return (
     <Card>
-      {/* <MetricSelector 
-        selectedMetric={selectedMetric} 
-        onMetricChange={setSelectedMetric}
-      /> */}
       <CardContent sx={{ height: '600px' }}>
 
         {/* 과제 선택 드롭다운 */}
-        <FormControl sx={{ width: "200px" }}>
+        <FormControl sx={{ width: "200px", mb: 3}}>
           <InputLabel>과제 선택</InputLabel>
           <Select value={selectedHw} onChange={(e) => setSelectedHw(e.target.value)}>
             {hwList.map((hw, index) => (
@@ -167,10 +163,26 @@ const MonitoringDashboard = () => {
           </Select>
         </FormControl>
 
-        <ResponsiveContainer width="100%" height="100%">
+          {/* 상단 통계 정보 표시 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
+            90th Percentile: {statsData.percentile_90 || '-'}
+          </Typography>
+          <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
+            50th Percentile: {statsData.percentile_50 || '-'}
+          </Typography>
+          <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
+            평균 코드 크기: {statsData.avg_bytes || '-'} bytes
+          </Typography>
+          <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
+            평균 제출 횟수: {statsData.avg_num || '-'}
+          </Typography>
+        </Box>
+
+        <ResponsiveContainer width="100%" height="90%">
             <BarChart 
               data={chartData}
-              margin={{ top: 20, right: 50, left: 50, bottom: 60 }}
+              margin={{ top: 20, right: 50, left: 50, bottom: 80 }}
             >
               <CartesianGrid 
                 strokeDasharray="3 3" 
