@@ -36,6 +36,8 @@ import {
   DialogActions,
   Tabs,
   Tab,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
@@ -79,143 +81,95 @@ import RemainingTime from './RemainingTime';
 import WatcherBreadcrumbs from '../common/WatcherBreadcrumbs';
 import AddIcon from '@mui/icons-material/Add';
 import GroupIcon from '@mui/icons-material/Group';
-
-const MetricSelector = ({ selectedMetric, onMetricChange }) => (
-  <Box sx={{ 
-    display: 'flex', 
-    gap: 2, 
-    p: 2, 
-    borderBottom: 1, 
-    borderColor: 'divider',
-    backgroundColor: (theme) => 
-      theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.02)',
-  }}>
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
-        메트릭:
-      </Typography>
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 0.5, 
-        backgroundColor: (theme) => 
-          theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.05)',
-        borderRadius: 1,
-        p: 0.5
-      }}>
-        <Button
-          size="small"
-          variant={selectedMetric === 'changes' ? 'contained' : 'text'}
-          onClick={() => onMetricChange('changes')}
-          startIcon={<TimelineIcon />}
-          sx={{ 
-            minWidth: '120px',
-            textTransform: 'none',
-            fontWeight: selectedMetric === 'changes' ? 'bold' : 'normal'
-          }}
-        >
-          코드 변화량
-        </Button>
-        <Button
-          size="small"
-          variant={selectedMetric === 'compiles' ? 'contained' : 'text'}
-          onClick={() => onMetricChange('compiles')}
-          startIcon={<BuildIcon />}
-          sx={{ 
-            minWidth: '120px',
-            textTransform: 'none',
-            fontWeight: selectedMetric === 'compiles' ? 'bold' : 'normal'
-          }}
-        >
-          컴파일 횟수
-        </Button>
-        <Button
-          size="small"
-          variant={selectedMetric === 'submissions' ? 'contained' : 'text'}
-          onClick={() => onMetricChange('submissions')}
-          startIcon={<AssignmentTurnedInIcon />}
-          sx={{ 
-            minWidth: '120px',
-            textTransform: 'none',
-            fontWeight: selectedMetric === 'submissions' ? 'bold' : 'normal'
-          }}
-        >
-          제출 현황
-        </Button>
-      </Box>
-    </Box>
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
-        시간 범위:
-      </Typography>
-      <Select
-        size="small"
-        value="last24h"
-        sx={{ minWidth: 120 }}
-      >
-        <MenuItem value="last1h">최근 1시간</MenuItem>
-        <MenuItem value="last24h">최근 24시간</MenuItem>
-        <MenuItem value="last7d">최근 7일</MenuItem>
-      </Select>
-    </Box>
-  </Box>
-);
+import { fetchStatsData } from '../../api/watcher';
 
 const MonitoringDashboard = () => {
   const { isDarkMode } = useTheme();
   const [selectedMetric, setSelectedMetric] = useState('changes');
+  
+  const { courseCode } = useParams();
+  const [hwList, setHwList] = useState([]);
+  const [selectedHw, setSelectedHw] = useState('');
+  const [statsData, setStatsData] = useState([]);
+  const [chartData, setChartData] = useState([]);
 
-  const avgChange = mockStudentCodeStats.reduce((acc, curr) => acc + curr.avgChangesPerMin, 0) / mockStudentCodeStats.length;
-  const stdDev = Math.sqrt(
-    mockStudentCodeStats.reduce((acc, curr) => acc + Math.pow(curr.avgChangesPerMin - avgChange, 2), 0) / mockStudentCodeStats.length
-  );
-
-  const getYAxisLabel = () => {
-    switch(selectedMetric) {
-      case 'changes': return '분당 평균 변경량';
-      case 'compiles': return '컴파일 횟수';
-      case 'submissions': return '제출 횟수';
-      default: return '';
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div style={{
+          backgroundColor: isDarkMode ? 'rgb(48, 48, 48)' : 'rgb(255, 255, 255)',
+          padding: '8px 12px',
+          borderRadius: "8px",
+          border: "none",
+          boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+          color: isDarkMode ? '#fff' : '#000',
+          fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif"
+        }}>
+          <p><strong>Student ID:</strong> {data.student_id}</p>
+          <p><strong>Timestamp:</strong> {data.timestamp}</p>
+          <p><strong>Code Size:</strong> {data.code_size} bytes</p>
+        </div>
+      );
     }
+    return null;
   };
 
-  const getData = () => {
-    switch(selectedMetric) {
-      case 'changes': 
-        return mockStudentCodeStats.map(s => ({
-          studentName: s.studentName,
-          value: s.avgChangesPerMin,
-          isOutlier: Math.abs(s.avgChangesPerMin - avgChange) > 2 * stdDev
-        }));
-      case 'compiles': 
-        return mockStudentCodeStats.map(s => ({
-          studentName: s.studentName,
-          value: s.totalCompiles || Math.floor(Math.random() * 100)
-        }));
-      case 'submissions': 
-        return mockStudentCodeStats.map(s => ({
-          studentName: s.studentName,
-          정답: Math.floor(Math.random() * 30),
-          '컴파일 에러': Math.floor(Math.random() * 20),
-          '런타임 에러': Math.floor(Math.random() * 15),
-          '시간 초과': Math.floor(Math.random() * 10),
-          '메모리 초과': Math.floor(Math.random() * 5)
-        }));
-      default: 
-        return [];
+  useEffect(() => {
+    const fetchHwList = async () => {
+      const mockHwList = ["hw1", "hw2"];
+      setHwList(mockHwList);
+
+      setSelectedHw(mockHwList[mockHwList.length - 1]);
+    };
+
+    fetchHwList();
+  }, [courseCode]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const data = await fetchStatsData(courseCode, selectedHw);
+      setStatsData(data);
+
+      const formattedData = data.top.map((student, index) => ({
+        index, 
+        student_id: student.student_id.toString(), 
+        code_size: student.code_size,
+        timestamp: student.timestamp
+      }));
+
+      setChartData(formattedData);
+      console.log('chartData', chartData);
+    };
+
+    if (courseCode && selectedHw) {
+      fetchStats();
     }
-  };
+  }, [courseCode, selectedHw]);
 
   return (
     <Card>
-      <MetricSelector 
+      {/* <MetricSelector 
         selectedMetric={selectedMetric} 
         onMetricChange={setSelectedMetric}
-      />
+      /> */}
       <CardContent sx={{ height: '600px' }}>
+
+        {/* 과제 선택 드롭다운 */}
+        <FormControl sx={{ width: "200px" }}>
+          <InputLabel>과제 선택</InputLabel>
+          <Select value={selectedHw} onChange={(e) => setSelectedHw(e.target.value)}>
+            {hwList.map((hw, index) => (
+              <MenuItem key={index} value={hw}>
+                {hw}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
         <ResponsiveContainer width="100%" height="100%">
-          {selectedMetric === 'submissions' ? (
             <BarChart 
-              data={getData()}
+              data={chartData}
               margin={{ top: 20, right: 50, left: 50, bottom: 60 }}
             >
               <CartesianGrid 
@@ -223,7 +177,7 @@ const MonitoringDashboard = () => {
                 fill={isDarkMode ? '#1e1e1e' : '#f5f5f5'}
               />
               <XAxis 
-                dataKey="studentName"
+                dataKey="student_id"
                 angle={-45}
                 textAnchor="end"
                 height={60}
@@ -232,7 +186,7 @@ const MonitoringDashboard = () => {
               />
               <YAxis 
                 label={{ 
-                  value: '제출 횟수', 
+                  value: '코드 크기 (bytes)', 
                   angle: -90, 
                   position: 'insideLeft',
                   offset: -40,
@@ -240,120 +194,18 @@ const MonitoringDashboard = () => {
                 }}
                 stroke={isDarkMode ? '#fff' : '#000'}
               />
-              <Tooltip
-                contentStyle={{ 
-                  backgroundColor: isDarkMode ? 'rgb(48, 48, 48)' : 'rgb(255, 255, 255)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                  color: isDarkMode ? '#fff' : '#000',
-                  padding: '8px 12px',
-                  fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif"
-                }}
-              />
+              <Tooltip content={<CustomTooltip />} />
               <Legend 
                 verticalAlign="top"
                 height={36}
               />
-              <Bar dataKey="정답" stackId="a" fill={isDarkMode ? '#66bb6a' : '#2e7d32'} barSize={30} />
-              <Bar dataKey="컴파일 에러" stackId="a" fill={isDarkMode ? '#ffa726' : '#ef6c00'} barSize={30} />
-              <Bar dataKey="런타임 에러" stackId="a" fill={isDarkMode ? '#ef5350' : '#c62828'} barSize={30} />
-              <Bar dataKey="시간 초과" stackId="a" fill={isDarkMode ? '#42a5f5' : '#1565c0'} barSize={30} />
-              <Bar dataKey="메모리 초과" stackId="a" fill={isDarkMode ? '#ab47bc' : '#6a1b9a'} barSize={30} />
-            </BarChart>
-          ) : (
-            <BarChart 
-              data={getData()}
-              margin={{ top: 20, right: 50, left: 50, bottom: 60 }}
-            >
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                fill={isDarkMode ? '#1e1e1e' : '#f5f5f5'}
-              />
-              <XAxis 
-                dataKey="studentName"
-                angle={-45}
-                textAnchor="end"
-                height={60}
-                interval={0}
-                stroke={isDarkMode ? '#fff' : '#000'}
-              />
-              <YAxis 
-                label={{ 
-                  value: getYAxisLabel(), 
-                  angle: -90, 
-                  position: 'insideLeft',
-                  offset: -40,
-                  fill: isDarkMode ? '#fff' : '#000'
-                }}
-                stroke={isDarkMode ? '#fff' : '#000'}
-              />
-              <Tooltip
-                contentStyle={{ 
-                  backgroundColor: isDarkMode ? 'rgb(48, 48, 48)' : 'rgb(255, 255, 255)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                  color: isDarkMode ? '#fff' : '#000',
-                  padding: '8px 12px',
-                  fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif"
-                }}
-              />
               <Bar 
-                dataKey="value"
+                dataKey="code_size" 
                 fill={isDarkMode ? '#42a5f5' : '#1976d2'}
                 radius={[4, 4, 0, 0]}
                 barSize={30}
-              >
-                {getData().map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`}
-                    fill={
-                      selectedMetric === 'changes' && entry.isOutlier
-                        ? (isDarkMode ? '#ff5252' : '#d32f2f')
-                        : selectedMetric === 'changes'
-                          ? (isDarkMode ? '#42a5f5' : '#1976d2')
-                          : (isDarkMode ? '#7e57c2' : '#512da8')
-                    }
-                  />
-                ))}
-              </Bar>
-              {selectedMetric === 'changes' && (
-                <>
-                  <ReferenceLine 
-                    y={avgChange} 
-                    stroke={isDarkMode ? '#81c784' : '#2e7d32'}
-                    strokeDasharray="5 5"
-                    label={{ 
-                      value: '평균', 
-                      position: 'right',
-                      fill: isDarkMode ? '#81c784' : '#2e7d32'
-                    }}
-                  />
-                  <ReferenceLine 
-                    y={avgChange + 2 * stdDev} 
-                    stroke={isDarkMode ? '#ffb74d' : '#ef6c00'}
-                    strokeDasharray="5 5"
-                    label={{ 
-                      value: '+2σ', 
-                      position: 'right',
-                      fill: isDarkMode ? '#ffb74d' : '#ef6c00'
-                    }}
-                  />
-                  <ReferenceLine 
-                    y={avgChange - 2 * stdDev} 
-                    stroke={isDarkMode ? '#ffb74d' : '#ef6c00'}
-                    strokeDasharray="5 5"
-                    label={{ 
-                      value: '-2σ', 
-                      position: 'right',
-                      fill: isDarkMode ? '#ffb74d' : '#ef6c00'
-                    }}
-                  />
-                </>
-              )}
+              />
             </BarChart>
-          )}
         </ResponsiveContainer>
       </CardContent>
     </Card>
@@ -966,10 +818,6 @@ const ClassDetail = () => {
           {currentTab === 'statistics' && (
             <Box>
               {/* <Typography>통계 데이터가 준비중입니다.</Typography> */}
-              <MetricSelector 
-                selectedMetric={selectedMetric} 
-                onMetricChange={setSelectedMetric}
-              />
               <MonitoringDashboard />
             </Box>
           )}

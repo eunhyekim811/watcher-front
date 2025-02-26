@@ -36,13 +36,15 @@ export const mockClasses = [
 export const mockMonitoringData = {
   "1": {  
     name: "학생A",
-    studentId: "testA@jbnu.ac.kr",
+    studentId: "202212112",
+    email: "testA@jbnu.ac.kr",
     totalCodeChanges: 'CodeChanges',
     totalCompiles: 'Compiles'
   }, 
   "2": {  
     name: "학생B",
-    studentId: "testB@jbnu.ac.kr",
+    studentId: "202012180",
+    email: "testB@jbnu.ac.kr",
     totalCodeChanges: 'CodeChanges',
     totalCompiles: 'Compiles'
   }, 

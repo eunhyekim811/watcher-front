@@ -39,9 +39,10 @@ import {
   TableRow,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import axios from 'axios';
 
-const backendUrl = process.env.REACT_APP_WATCHER_BACKEND_URL;
+import { fetchMonitoringData, fetchGraphData, fetchHwFiles, fetchSnapshots, fetchSnapshotAvg } from '../../api/watcher';
+import { DataObjectTwoTone } from '@mui/icons-material';
+
 
 const assignments = [
   {
@@ -60,16 +61,32 @@ const assignments = [
   },
 ]
 
+const colors = ["#8884d8", "#82ca9d", "#ff7300", "#ff0000", "#00bfff", "#9932cc"];
+
 const MonitoringData = () => {
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { studentId } = useParams();
+  const { courseCode, studentId } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
+
+  const [studentNum, setStudentNum] = useState('');
   const [selectedAssignment, setSelectedAssignment] = useState('');
+  const [snapshotAvg, setSnapshotAvg] = useState({});
+  const [hwSnapshotAvg, setHwSnapshotAvg] = useState({});
+  const [graphData, setGraphData] = useState([]);
+  const [hwFiles, setHwFiles] = useState([]);
+  const [selectedHwFile, setSelectedHwFile] = useState('');
+  const [snapshotList, setSnapshotList] = useState([]);
+  const [selectedSnapshot, setSelectedSnapshot] = useState('');
+
 
   useEffect(() => {
+    // console.log(courseCode, studentId);
+    setStudentNum(mockMonitoringData[studentId].studentId);
+    // console.log(studentNum);
+
     const fetchMonitoringData = async () => {
       try {
         // TODO: API 구현 필요 - GET /api/monitoring/{studentId}
@@ -82,7 +99,7 @@ const MonitoringData = () => {
         const data = mockMonitoringData[studentId];
         if (data) {
           setStudentData(data);
-          setSelectedAssignment(assignments[assignments.length - 1].assignmentId);
+          setSelectedAssignment(assignments[assignments.length - 1].assignmentName);
         } else {
           setError('학생 데이터를 찾을 수 없습니다.');
         }
@@ -96,8 +113,76 @@ const MonitoringData = () => {
     fetchMonitoringData();
   }, [studentId]);
 
+  useEffect(() => {
+
+    const loadData = async () => {
+      try {
+      if (studentNum) {
+        setLoading(true);
+
+        const avgData = await fetchMonitoringData(courseCode, selectedAssignment, studentNum);
+        setSnapshotAvg(avgData);
+
+        const hwList = await fetchHwFiles(courseCode, selectedAssignment, studentNum);
+        setHwFiles(hwList);
+
+        const data = await fetchGraphData(courseCode, selectedAssignment, studentNum);
+      
+        const trends = data.snapshot_trends || {};
+        const formattedData = {};
+
+        Object.keys(trends).forEach((file) => {
+          trends[file].forEach((entry) => {
+            const {timestamp, size} = entry;
+
+            if(!formattedData[timestamp]) {
+              formattedData[timestamp] = { timestamp };
+            }
+            formattedData[timestamp][file] = size;
+          });
+        });
+
+        setGraphData(Object.values(formattedData));
+
+      }
+
+      } catch (err) {
+        setError(err.message || "데이터 로딩 실패");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [selectedAssignment, courseCode, studentNum]);
+
+  useEffect(() => {
+    const loadSnapshots = async () => {
+      try {
+        if (selectedHwFile) {
+          setLoading(true);
+
+          const snapshots = await fetchSnapshots(courseCode, selectedAssignment, studentNum, selectedHwFile);
+          setSnapshotList(snapshots || []);
+
+          const data = await fetchSnapshotAvg(courseCode, selectedAssignment, studentNum, selectedHwFile);
+          setHwSnapshotAvg(data);
+        }
+      } catch (err) {
+        setError(err.message || "스냅샷 로딩 실패");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSnapshots();
+  }, [selectedAssignment, courseCode, studentNum, studentId, selectedHwFile]);
+
   const handleAssignmentChange = (event) => {
+    // assignments[assignments.length - 1].assignmentName
     setSelectedAssignment(event.target.value);
+    setSelectedHwFile('');
+    setSelectedSnapshot('');
   };
 
   if (loading) {
@@ -172,14 +257,58 @@ const MonitoringData = () => {
               sx={{ minWidth: 120 }}
             >
               {assignments.map((assignment) => (
-                <MenuItem key={assignment.assignmentId} value={assignment.assignmentId}>
+                <MenuItem key={assignment.assignmentId} value={assignment.assignmentName}>
                   {assignment.assignmentName}
                 </MenuItem>
               ))}
             </Select>
           </Box>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={3}>  
+            {/* 코드 파일별 스냅샷 목록 */}
+            <Grid item xs={12} md={6}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    코드 파일 목록
+                  </Typography>
+                  <Select
+                    value={selectedHwFile}
+                    onChange={(e) => setSelectedHwFile(e.target.value)}
+                    fullWidth
+                  >
+                    {hwFiles.map((file) => (
+                      <MenuItem key={file} value={file}>
+                        {file}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* 스냅샷 목록 */}
+            <Grid item xs={12} md={6} sx={{ visibility: selectedHwFile ? 'visible' : 'hidden' }}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    {selectedHwFile}의 스냅샷 목록
+                  </Typography>
+                  <Select
+                    value={selectedSnapshot}
+                    onChange={(e) => setSelectedSnapshot(e.target.value)}
+                    fullWidth
+                  >
+                    {snapshotList.map((snapshot, index) => (
+                      <MenuItem key={index} value={snapshot}>
+                        {`Timestamp: ${snapshot}`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </CardContent>
+              </Card>
+            </Grid>
+
             {/* 요약 통계 */}
             <Grid item xs={12} md={4}>
               <Card>
@@ -192,7 +321,7 @@ const MonitoringData = () => {
                     코드 변경
                   </Typography>
                   <Typography variant="h4">
-                    {studentData.totalCodeChanges}회
+                    {snapshotAvg.snapshot_avg}회
                   </Typography>
                 </CardContent>
               </Card>
@@ -206,16 +335,16 @@ const MonitoringData = () => {
                     gutterBottom
                     sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
                   >
-                    컴파일 시도
+                    평균 코드 사이즈
                   </Typography>
                   <Typography variant="h4">
-                    {studentData.totalCompiles}회
+                    {snapshotAvg.snapshot_size_avg} bytes
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
 
-            {/* <Grid item xs={12} md={4}>
+            {/* <Grid item xs={12} md={3} sx={{ visibility: selectedHwFile ? 'visible' : 'hidden' }}>
               <Card>
                 <CardContent>
                   <Typography 
@@ -223,17 +352,16 @@ const MonitoringData = () => {
                     gutterBottom
                     sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
                   >
-                    정답 제출
+                    {selectedHwFile}의 코드 변화
                   </Typography>
                   <Typography variant="h4">
-                    {studentData.correctSubmissions}회
+                    {hwSnapshotAvg.snapshot_avg}회
                   </Typography>
                 </CardContent>
               </Card>
             </Grid> */}
 
-            {/* 제출 현황 도넛 차트 */}
-            {/* <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={4} sx={{ visibility: selectedHwFile ? 'visible' : 'hidden' }}>
               <Card>
                 <CardContent>
                   <Typography 
@@ -241,158 +369,14 @@ const MonitoringData = () => {
                     gutterBottom
                     sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
                   >
-                    문제 제출 현황
+                    {selectedHwFile}의 평균 크기
                   </Typography>
-                  <Box sx={{ 
-                    height: 300, 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}>
-                    <Box sx={{ width: '60%', height: '100%' }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={studentData.submissionStats.stats}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                          >
-                            {studentData.submissionStats.stats.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            formatter={(value, name) => [`${value}회`, name]}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Box>
-                    <Box sx={{ 
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1.5,
-                      width: '40%',
-                      pl: 2
-                    }}>
-                      {studentData.submissionStats.stats.map((entry, index) => (
-                        <Box 
-                          key={`legend-${index}`}
-                          sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center',
-                            gap: 1
-                          }}
-                        >
-                          <Box 
-                            sx={{ 
-                              width: 12, 
-                              height: 12, 
-                              backgroundColor: (theme) => theme.palette.primary.main,
-                              borderRadius: '50%'
-                            }} 
-                          />
-                          <Typography variant="body2">
-                            {entry.name} ({entry.value}회)
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
+                  <Typography variant="h4">
+                    {hwSnapshotAvg.snapshot_size_avg} bytes
+                  </Typography>
                 </CardContent>
               </Card>
-            </Grid> */}
-
-            {/* 최근 제출 기록 */}
-            {/* <Grid item xs={12} md={6}>
-              <Card>
-                <CardContent>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                  >
-                    최근 제출 기록
-                  </Typography>
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell 
-                            sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                          >
-                            문제
-                          </TableCell>
-                          <TableCell 
-                            sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                          >
-                            제출 시간
-                          </TableCell>
-                          <TableCell 
-                            sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                          >
-                            상태
-                          </TableCell>
-                          <TableCell 
-                            sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                          >
-                            실행시간
-                          </TableCell>
-                          <TableCell 
-                            sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                          >
-                            메모리
-                          </TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {studentData.recentSubmissions?.map((submission) => (
-                          <TableRow key={submission.id}>
-                            <TableCell 
-                              sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                            >
-                              {submission.problemName}
-                            </TableCell>
-                            <TableCell 
-                              sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                            >
-                              {submission.submitTime}
-                            </TableCell>
-                            <TableCell 
-                              sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                            >
-                              <Chip 
-                                label={submission.status}
-                                size="small"
-                                color={
-                                  submission.status === '정답' ? 'success' :
-                                  submission.status === '오답' ? 'error' :
-                                  submission.status === '컴파일 에러' ? 'warning' : 'info'
-                                }
-                              />
-                            </TableCell>
-                            <TableCell 
-                              sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                            >
-                              {submission.runtime}
-                            </TableCell>
-                            <TableCell 
-                              sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                            >
-                              {submission.memory}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </CardContent>
-              </Card>
-            </Grid>  */}
-
+            </Grid>
 
             {/* 시계열 그래프 */}
             <Grid item xs={12}>
@@ -403,11 +387,11 @@ const MonitoringData = () => {
                     gutterBottom
                     sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
                   >
-                    시간별 활동 현황
+                    시간별 코드 변화율
                   </Typography>
                   <Box sx={{ height: 400 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={studentData.timeSeriesData}>
+                      <LineChart data={graphData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis 
                           dataKey="timestamp" 
@@ -419,37 +403,30 @@ const MonitoringData = () => {
                           tickMargin={10}
                         />
                         <Tooltip 
-                          formatter={(value, name) => [
-                            `${value}회`,
-                            name === 'codeChanges' ? '코드 변경' : '컴파일'
-                          ]}
+                          formatter={(value, name) => [ `${value} bytes`, name]}
                           labelFormatter={(label) => `${label}`}
                         />
                         <Legend 
                           verticalAlign="top" 
                           height={36}
-                          formatter={(value) => 
-                            value === 'codeChanges' ? '코드 변경' : '컴파일'
-                          }
+                          formatter={(value) => value}
                         />
-                        <Line 
-                          type="monotone" 
-                          dataKey="codeChanges" 
-                          name="코드 변경" 
-                          stroke="#8884d8" 
-                          strokeWidth={2}
-                          dot={{ strokeWidth: 2 }}
-                          activeDot={{ r: 6, strokeWidth: 2 }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="compiles" 
-                          name="컴파일" 
-                          stroke="#82ca9d" 
-                          strokeWidth={2}
-                          dot={{ strokeWidth: 2 }}
-                          activeDot={{ r: 6, strokeWidth: 2 }}
-                        />
+                        {graphData.length > 0 &&
+                          Array.from(new Set(graphData.flatMap((entry) =>
+                            Object.keys(entry).filter((key) => key !== "timestamp")
+                          ))).map((file, index) => (
+                          <Line 
+                            key={file}
+                            type="monotone" 
+                            dataKey={file}
+                            // data={graphData.filter((d) => d.codeFile === codeFile)}
+                            name={file} 
+                            stroke={colors[index % colors.length]}
+                            strokeWidth={2}
+                            dot={{ strokeWidth: 2 }}
+                            activeDot={{ r: 6, strokeWidth: 2 }}
+                          />
+                        ))}
                       </LineChart>
                     </ResponsiveContainer>
                   </Box>

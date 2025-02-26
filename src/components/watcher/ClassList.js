@@ -68,7 +68,7 @@ const ClassList = () => {
     const sampleClasses = [
       {
         courseId: 1,
-        courseCode: 'CSE1001',
+        courseCode: 'os-1',
         courseName: '운영체제',
         courseYear: 2025,
         courseTerm: 1,
@@ -76,7 +76,7 @@ const ClassList = () => {
       },
       {
         courseId: 2,
-        courseCode: 'CSE1002',
+        courseCode: 'ai-2',
         courseName: '인공지능',
         courseYear: 2025,
         courseTerm: 1,
