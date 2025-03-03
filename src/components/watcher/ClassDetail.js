@@ -149,8 +149,11 @@ const MonitoringDashboard = () => {
 
   return (
     <Card>
-      <CardContent sx={{ height: '600px' }}>
-
+      <CardContent sx={{ 
+        height: 'auto',  // 고정 높이 제거
+        minHeight: '600px',  // 최소 높이 설정
+        overflow: 'auto'  // 스크롤 가능하도록 설정
+      }}>
         {/* 과제 선택 드롭다운 */}
         <FormControl sx={{ width: "200px", mb: 3}}>
           <InputLabel>과제 선택</InputLabel>
@@ -163,23 +166,124 @@ const MonitoringDashboard = () => {
           </Select>
         </FormControl>
 
-          {/* 상단 통계 정보 표시 */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
-            90th Percentile: {statsData.percentile_90 || '-'}
-          </Typography>
-          <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
-            50th Percentile: {statsData.percentile_50 || '-'}
-          </Typography>
-          <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
-            평균 코드 크기: {statsData.avg_bytes || '-'} bytes
-          </Typography>
-          <Typography variant="h6" sx={{ color: isDarkMode ? '#fff' : '#000' }}>
-            평균 제출 횟수: {statsData.avg_num || '-'}
-          </Typography>
-        </Box>
+        {/* 상단 통계 정보 표시 */}
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          {/* 퍼센타일 정보 */}
+          <Grid item xs={12}>
+            <Paper 
+              elevation={0}
+              sx={{ 
+                p: 2, 
+                background: (theme) => 
+                  theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.02)',
+                borderRadius: 2,
+                border: (theme) => 
+                  `1px solid ${theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.1)' 
+                    : 'rgba(0, 0, 0, 0.1)'}`
+              }}
+            >
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  mb: 2,
+                  color: 'text.secondary',
+                  fontWeight: 'bold'
+                }}
+              >
+                코드 크기 분포
+              </Typography>
+              <Stack direction="row" spacing={3} justifyContent="space-around">
+                <Box>
+                  <Typography variant="h4" sx={{ 
+                    color: 'text.primary',
+                    fontWeight: 'bold'
+                  }}>
+                    {statsData.percentile_90 || '-'}
+                    <Typography component="span" variant="body2" sx={{ ml: 0.5 }}>B</Typography>
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    90th 퍼센타일
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h4" sx={{ 
+                    color: 'text.primary',
+                    fontWeight: 'bold'
+                  }}>
+                    {statsData.percentile_50 || '-'}
+                    <Typography component="span" variant="body2" sx={{ ml: 0.5 }}>B</Typography>
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    50th 퍼센타일
+                  </Typography>
+                </Box>
+              </Stack>
+            </Paper>
+          </Grid>
 
-        <ResponsiveContainer width="100%" height="90%">
+          {/* 평균 정보 */}
+          <Grid item xs={12}>
+            <Paper 
+              elevation={0}
+              sx={{ 
+                p: 2, 
+                background: (theme) => 
+                  theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.02)',
+                borderRadius: 2,
+                border: (theme) => 
+                  `1px solid ${theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.1)' 
+                    : 'rgba(0, 0, 0, 0.1)'}`
+              }}
+            >
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  mb: 2,
+                  color: 'text.secondary',
+                  fontWeight: 'bold'
+                }}
+              >
+                평균 통계
+              </Typography>
+              <Stack direction="row" spacing={3} justifyContent="space-around">
+                <Box>
+                  <Typography variant="h4" sx={{ 
+                    color: 'text.primary',
+                    fontWeight: 'bold'
+                  }}>
+                    {statsData.avg_bytes || '-'}
+                    <Typography component="span" variant="body2" sx={{ ml: 0.5 }}>B</Typography>
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    평균 코드 크기
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h4" sx={{ 
+                    color: 'text.primary',
+                    fontWeight: 'bold'
+                  }}>
+                    {statsData.avg_num || '-'}
+                    <Typography component="span" variant="body2" sx={{ ml: 0.5 }}>회</Typography>
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    평균 코드 변경 횟수
+                  </Typography>
+                </Box>
+              </Stack>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* 차트 컨테이너 높이 조정 */}
+        <Box sx={{ height: '500px', width: '100%' }}>  {/* 고정된 높이의 컨테이너 */}
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart 
               data={chartData}
               margin={{ top: 20, right: 50, left: 50, bottom: 80 }}
@@ -218,7 +322,8 @@ const MonitoringDashboard = () => {
                 barSize={30}
               />
             </BarChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </Box>
       </CardContent>
     </Card>
   );

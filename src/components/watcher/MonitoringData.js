@@ -12,7 +12,8 @@ import {
   Chip,
   Fade,
   Select,
-  MenuItem
+  MenuItem,
+  Stack
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -80,7 +81,6 @@ const MonitoringData = () => {
   const [selectedHwFile, setSelectedHwFile] = useState('');
   const [snapshotList, setSnapshotList] = useState([]);
   const [selectedSnapshot, setSelectedSnapshot] = useState('');
-
 
   useEffect(() => {
     // console.log(courseCode, studentId);
@@ -179,10 +179,19 @@ const MonitoringData = () => {
   }, [selectedAssignment, courseCode, studentNum, studentId, selectedHwFile]);
 
   const handleAssignmentChange = (event) => {
-    // assignments[assignments.length - 1].assignmentName
     setSelectedAssignment(event.target.value);
     setSelectedHwFile('');
     setSelectedSnapshot('');
+  };
+
+  const handleHwFileChange = (event) => {
+    const value = event.target.value;
+    setSelectedHwFile(value);
+    setSelectedSnapshot('');  // 파일이 변경되면 스냅샷 선택 초기화
+  };
+
+  const handleSnapshotChange = (event) => {
+    setSelectedSnapshot(event.target.value);
   };
 
   if (loading) {
@@ -223,14 +232,15 @@ const MonitoringData = () => {
         }}
       >
         <Paper 
-          elevation={1}
+          elevation={0}
           sx={{ 
-            p: 2,
+            p: 3,
             minHeight: 'calc(100vh - 100px)',
-            borderRadius: 0
+            borderRadius: 2,
+            bgcolor: '#fafafa'
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <IconButton 
                 onClick={() => navigate(-1)} 
@@ -245,166 +255,122 @@ const MonitoringData = () => {
               </IconButton>
               <Typography 
                 variant="h5"
-                sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
+                sx={{ 
+                  fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif",
+                  fontWeight: 500
+                }}
               >
-                {studentData.name} ({studentData.studentId}) - 모니터링 데이터
+                {studentData.name} ({studentData.studentId})
               </Typography>
             </Box>
-            <Select
-              value={selectedAssignment}
-              onChange={handleAssignmentChange}
-              displayEmpty
-              sx={{ minWidth: 120 }}
-            >
-              {assignments.map((assignment) => (
-                <MenuItem key={assignment.assignmentId} value={assignment.assignmentName}>
-                  {assignment.assignmentName}
-                </MenuItem>
-              ))}
-            </Select>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                과제 선택
+              </Typography>
+              <Select
+                value={selectedAssignment}
+                onChange={handleAssignmentChange}
+                displayEmpty
+                size="small"
+                sx={{ 
+                  minWidth: 120,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(0, 0, 0, 0.1)'
+                  }
+                }}
+              >
+                {assignments.map((assignment) => (
+                  <MenuItem key={assignment.assignmentId} value={assignment.assignmentName}>
+                    {assignment.assignmentName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
           </Box>
 
-          <Grid container spacing={3}>  
-            {/* 코드 파일별 스냅샷 목록 */}
-            <Grid item xs={12} md={6}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    코드 파일 목록
-                  </Typography>
-                  <Select
-                    value={selectedHwFile}
-                    onChange={(e) => setSelectedHwFile(e.target.value)}
-                    fullWidth
-                  >
-                    {hwFiles.map((file) => (
-                      <MenuItem key={file} value={file}>
-                        {file}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </CardContent>
-              </Card>
-            </Grid>
+          <Grid container spacing={4}>
+            {/* 주요 통계 데이터 */}
+            <Grid item xs={12} md={8}>
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>주요 통계</Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={4}>
+                    <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
+                      <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1 }}>
+                        코드 변경
+                      </Typography>
+                      <Typography variant="h4" sx={{ mt: 1, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {snapshotAvg.snapshot_avg}
+                        <Typography component="span" variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>회</Typography>
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
+                      <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1 }}>
+                        평균 코드 사이즈
+                      </Typography>
+                      <Typography variant="h4" sx={{ mt: 1, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {snapshotAvg.snapshot_size_avg}
+                        <Typography component="span" variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>B</Typography>
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
+                      <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1 }}>
+                        총 작업 시간
+                      </Typography>
+                      <Typography variant="h4" sx={{ mt: 1, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {(() => {
+                          const total = snapshotAvg.total;
+                          const days = Math.floor(total / (24 * 3600));
+                          const hours = Math.floor((total % (24 * 3600)) / 3600);
+                          const minutes = Math.floor((total % 3600) / 60);
+                          const seconds = total % 60;
+                          
+                          const parts = [];
+                          if (days > 0) parts.push(`${days}일`);
+                          if (hours > 0) parts.push(`${hours}시간`);
+                          if (minutes > 0) parts.push(`${minutes}분`);
+                          if (seconds > 0 || parts.length === 0) parts.push(`${seconds}초`);
+                          
+                          return parts.join(' ');
+                        })()}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
 
-            {/* 스냅샷 목록 */}
-            <Grid item xs={12} md={6} sx={{ visibility: selectedHwFile ? 'visible' : 'hidden' }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {selectedHwFile}의 스냅샷 목록
-                  </Typography>
-                  <Select
-                    value={selectedSnapshot}
-                    onChange={(e) => setSelectedSnapshot(e.target.value)}
-                    fullWidth
-                  >
-                    {snapshotList.map((snapshot, index) => (
-                      <MenuItem key={index} value={snapshot}>
-                        {`Timestamp: ${snapshot}`}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* 요약 통계 */}
-            <Grid item xs={12} md={4}>
-              <Card>
-                <CardContent>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                  >
-                    코드 변경
-                  </Typography>
-                  <Typography variant="h4">
-                    {snapshotAvg.snapshot_avg}회
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <Card>
-                <CardContent>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                  >
-                    평균 코드 사이즈
-                  </Typography>
-                  <Typography variant="h4">
-                    {snapshotAvg.snapshot_size_avg} bytes
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* <Grid item xs={12} md={3} sx={{ visibility: selectedHwFile ? 'visible' : 'hidden' }}>
-              <Card>
-                <CardContent>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                  >
-                    {selectedHwFile}의 코드 변화
-                  </Typography>
-                  <Typography variant="h4">
-                    {hwSnapshotAvg.snapshot_avg}회
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid> */}
-
-            <Grid item xs={12} md={4} sx={{ visibility: selectedHwFile ? 'visible' : 'hidden' }}>
-              <Card>
-                <CardContent>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                  >
-                    {selectedHwFile}의 평균 크기
-                  </Typography>
-                  <Typography variant="h4">
-                    {hwSnapshotAvg.snapshot_size_avg} bytes
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* 시계열 그래프 */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ fontFamily: "'JetBrains Mono', 'Noto Sans KR', sans-serif" }}
-                  >
-                    시간별 코드 변화율
-                  </Typography>
+              {/* 시계열 그래프 */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>시간별 코드 변화</Typography>
+                <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
                   <Box sx={{ height: 400 }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={graphData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.1)" />
                         <XAxis 
                           dataKey="timestamp" 
                           tick={{ fontSize: 12 }}
                           tickMargin={10}
+                          stroke="rgba(0,0,0,0.1)"
                         />
                         <YAxis 
                           tick={{ fontSize: 12 }}
                           tickMargin={10}
+                          stroke="rgba(0,0,0,0.1)"
                         />
                         <Tooltip 
                           formatter={(value, name) => [ `${value} bytes`, name]}
                           labelFormatter={(label) => `${label}`}
+                          contentStyle={{
+                            backgroundColor: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                          }}
                         />
                         <Legend 
                           verticalAlign="top" 
@@ -419,19 +385,125 @@ const MonitoringData = () => {
                             key={file}
                             type="monotone" 
                             dataKey={file}
-                            // data={graphData.filter((d) => d.codeFile === codeFile)}
                             name={file} 
                             stroke={colors[index % colors.length]}
-                            strokeWidth={2}
-                            dot={{ strokeWidth: 2 }}
-                            activeDot={{ r: 6, strokeWidth: 2 }}
+                            strokeWidth={1.5}
+                            dot={{ strokeWidth: 1.5, r: 3 }}
+                            activeDot={{ r: 5, strokeWidth: 1.5 }}
                           />
                         ))}
                       </LineChart>
                     </ResponsiveContainer>
                   </Box>
-                </CardContent>
-              </Card>
+                </Paper>
+              </Box>
+            </Grid>
+
+            {/* 작업 시간 통계 및 파일 선택 */}
+            <Grid item xs={12} md={4}>
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>작업 시간 세부 정보</Typography>
+                <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
+                  <Stack spacing={3}>
+                    <Box>
+                      <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1 }}>
+                        첫 작업 시간
+                      </Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5, fontSize: '1.1rem' }}>
+                        {snapshotAvg.first}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1 }}>
+                        마지막 작업 시간
+                      </Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5, fontSize: '1.1rem' }}>
+                        {snapshotAvg.last}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1 }}>
+                        마지막 작업 간격
+                      </Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5, fontSize: '1.1rem' }}>
+                        {snapshotAvg.interval} 초
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1 }}>
+                        평균 작업 간격
+                      </Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5, fontSize: '1.1rem' }}>
+                        {Math.round(snapshotAvg.total / snapshotAvg.snapshot_avg)} 초
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Paper>
+              </Box>
+
+              {/* 파일 선택 */}
+              <Box>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>파일 분석</Typography>
+                <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
+                  <Stack spacing={3}>
+                    <Box>
+                      <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1, mb: 1, display: 'block' }}>
+                        코드 파일 선택
+                      </Typography>
+                      <Select
+                        value={selectedHwFile}
+                        onChange={handleHwFileChange}
+                        fullWidth
+                        size="small"
+                        displayEmpty
+                        sx={{
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'rgba(0, 0, 0, 0.1)'
+                          }
+                        }}
+                      >
+                        <MenuItem value="">
+                          <Typography color="text.secondary">전체</Typography>
+                        </MenuItem>
+                        {hwFiles.map((file) => (
+                          <MenuItem key={file} value={file}>
+                            {file.replace(/@/g, '/')}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </Box>
+
+                    {selectedHwFile && (
+                      <Box>
+                        <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: 1, mb: 1, display: 'block' }}>
+                          스냅샷 선택
+                        </Typography>
+                        <Select
+                          value={selectedSnapshot}
+                          onChange={handleSnapshotChange}
+                          fullWidth
+                          size="small"
+                          displayEmpty
+                          sx={{
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'rgba(0, 0, 0, 0.1)'
+                            }
+                          }}
+                        >
+                          <MenuItem value="">
+                            <Typography color="text.secondary">전체</Typography>
+                          </MenuItem>
+                          {snapshotList.map((snapshot, index) => (
+                            <MenuItem key={index} value={snapshot}>
+                              {`Timestamp: ${snapshot}`}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </Box>
+                    )}
+                  </Stack>
+                </Paper>
+              </Box>
             </Grid>
           </Grid>
         </Paper>
