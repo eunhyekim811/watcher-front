@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.REACT_APP_WATCHER_BACKEND_URL;
 export const fetchHwFiles = async (classDiv, hwName, studentId) => {
     try {
         const response = await axios.get(
-            `${API_BASE_URL}/${classDiv}/${hwName}/${studentId}`
+            `${API_BASE_URL}/api/${classDiv}/${hwName}/${studentId}`
         );
         return response.data;
     } catch (error) {
@@ -17,7 +17,7 @@ export const fetchHwFiles = async (classDiv, hwName, studentId) => {
 export const fetchSnapshots = async (classDiv, hwName, studentId, filename) => {
     try {
         const response = await axios.get(
-            `${API_BASE_URL}/${classDiv}/${hwName}/${studentId}/${filename}`
+            `${API_BASE_URL}/api/${classDiv}/${hwName}/${studentId}/${filename}`
         );
         return response.data;
     } catch (error) {
@@ -29,7 +29,7 @@ export const fetchSnapshots = async (classDiv, hwName, studentId, filename) => {
 export const fetchMonitoringData = async (classDiv, hwName, studentId) => {
     try {
         const response = await axios.get(
-            `${API_BASE_URL}/assignments/snapshot_avg/${classDiv}/${hwName}/${studentId}`
+            `${API_BASE_URL}/api/assignments/snapshot_avg/${classDiv}/${hwName}/${studentId}`
         );
         return response.data;
     } catch (error) {
@@ -41,7 +41,7 @@ export const fetchMonitoringData = async (classDiv, hwName, studentId) => {
 export const fetchSnapshotAvg = async (classDiv, hwName, studentId, filename) => {
     try { 
         const response = await axios.get(
-            `${API_BASE_URL}/snapshot_avg/${classDiv}/${hwName}/${studentId}/${filename}`
+            `${API_BASE_URL}/api/snapshot_avg/${classDiv}/${hwName}/${studentId}/${filename}`
         );
         return response.data;
     } catch (error) {
@@ -53,7 +53,7 @@ export const fetchSnapshotAvg = async (classDiv, hwName, studentId, filename) =>
 export const fetchGraphData = async (classDiv, hwName, studentId) => {
     try {
         const response = await axios.get(
-            `${API_BASE_URL}/graph_data/${classDiv}/${hwName}/${studentId}`
+            `${API_BASE_URL}/api/graph_data/${classDiv}/${hwName}/${studentId}`
         );
         return response.data;
     } catch (error) {
@@ -65,7 +65,7 @@ export const fetchGraphData = async (classDiv, hwName, studentId) => {
 export const fetchStatsData = async (classDiv, hwName) => {
     try {
         const response = await axios.get(
-            `${API_BASE_URL}/assignment/${classDiv}/${hwName}`
+            `${API_BASE_URL}/api/assignment/${classDiv}/${hwName}`
         );
         return response.data;
     } catch (error) {

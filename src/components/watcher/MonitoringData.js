@@ -81,6 +81,7 @@ const MonitoringData = () => {
   const [selectedHwFile, setSelectedHwFile] = useState('');
   const [snapshotList, setSnapshotList] = useState([]);
   const [selectedSnapshot, setSelectedSnapshot] = useState('');
+  const [snapshotContent, setSnapshotContent] = useState('');
 
   useEffect(() => {
     // console.log(courseCode, studentId);
@@ -177,6 +178,23 @@ const MonitoringData = () => {
 
     loadSnapshots();
   }, [selectedAssignment, courseCode, studentNum, studentId, selectedHwFile]);
+
+  // useEffect(() => {
+  //   const loadSnapshotContent = async () => {
+  //     if (selectedSnapshot) {
+  //       try {
+  //         const content = await fetchSnapshotContent(courseCode, selectedAssignment, studentNum, selectedHwFile, selectedSnapshot);
+  //         setSnapshotContent(content);
+  //       } catch (err) {
+  //         setError(err.message || "스냅샷 콘텐츠 로딩 실패");
+  //       } finally {
+  //         setLoading(false);
+  //       }
+  //     }
+  //   };
+
+  //   loadSnapshotContent();
+  // }, [selectedAssignment, courseCode, studentNum, studentId, selectedHwFile, selectedSnapshot]);
 
   const handleAssignmentChange = (event) => {
     setSelectedAssignment(event.target.value);
@@ -363,7 +381,7 @@ const MonitoringData = () => {
                           stroke="rgba(0,0,0,0.1)"
                         />
                         <Tooltip 
-                          formatter={(value, name) => [ `${value} bytes`, name]}
+                          formatter={(value, name) => [ `${value} bytes`, name.replace(/@/g, '/')]}
                           labelFormatter={(label) => `${label}`}
                           contentStyle={{
                             backgroundColor: '#fff',
@@ -375,7 +393,7 @@ const MonitoringData = () => {
                         <Legend 
                           verticalAlign="top" 
                           height={36}
-                          formatter={(value) => value}
+                          formatter={(value) => value.replace(/@/g, '/')}
                         />
                         {graphData.length > 0 &&
                           Array.from(new Set(graphData.flatMap((entry) =>
@@ -385,7 +403,7 @@ const MonitoringData = () => {
                             key={file}
                             type="monotone" 
                             dataKey={file}
-                            name={file} 
+                            name={file}
                             stroke={colors[index % colors.length]}
                             strokeWidth={1.5}
                             dot={{ strokeWidth: 1.5, r: 3 }}
