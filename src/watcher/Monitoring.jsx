@@ -55,6 +55,8 @@ const Monitoring = () => {
   const [selectedSnapshot, setSelectedSnapshot] = useState(""); // 선택된 스냅샷 파일
   const [fileContent, setFileContent] = useState(""); // 파일 내용
   const [graphData, setGraphData] = useState([]); // 스냅샷 크기 변화 데이터
+  const [graphsnapshot, setGraphSnapshot] = useState([]); // 스냅샷 크기 변화 데이터
+  const [averageSnapshots, setAverageSnapshots] = useState(null);
 
   useEffect(() => {
     const fetchMonitoringData = async () => {
@@ -84,7 +86,35 @@ const Monitoring = () => {
 
   useEffect(() => {
     if (selectedAssignment) {
-      fetch(`${backendUrl}/graphdata?student_id=${studentData.studentId}&assignment_name=${selectedAssignment.name}`)
+      fetch(`${backendUrl}/snapshot_avg`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sid: studentData.studentId,
+          aname: selectedAssignment.name,
+        }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          setAverageSnapshots(data.average_snapshots);
+          // console.log(data);
+        })
+        .catch(error => {
+          console.error('Error fetching snapshot average:', error);
+        });
+
+      fetch(`${backendUrl}/graphdata`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sid: studentData.studentId,
+          aname: selectedAssignment.name,
+        }),
+      })
         .then(response => response.json())
         .then(data => {
           const trends = data.snapshot_trends || {};
@@ -92,7 +122,7 @@ const Monitoring = () => {
           Object.keys(trends).forEach(codeFile => {
             trends[codeFile].forEach(entry => {
               formattedData.push({
-                timestamp: new Date(entry.timestamp),
+                timestamp: Number(entry.timestamp)*1000,
                 size: entry.size,
                 codeFile, 
               });
@@ -106,7 +136,16 @@ const Monitoring = () => {
           console.error('Error fetching graph data:', error);
         });
 
-      fetch(`${backendUrl}/codes?student_id=${studentData.studentId}&assignment_name=${selectedAssignment.name}`)
+      fetch(`${backendUrl}/codes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sid: studentData.studentId,
+          aname: selectedAssignment.name,
+        }),
+      })
         .then(response => response.json())
         .then(data => {
           console.log(data);
@@ -120,7 +159,17 @@ const Monitoring = () => {
 
   useEffect(() => {
     if (selectedCodeFile) {
-      fetch(`${backendUrl}/snapshots?student_id=${studentData.studentId}&assignment_name=${selectedAssignment.name}&code_file_name=${selectedCodeFile}`)
+      fetch(`${backendUrl}/snapshots`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sid: studentData.studentId,
+          aname: selectedAssignment.name,
+          cname: selectedCodeFile,
+        }),
+      })
         .then(response => response.json())
         .then(data => {
           console.log(data);
@@ -129,12 +178,26 @@ const Monitoring = () => {
         .catch(error => {
           console.error('Error fetching snapshots:', error);
         });
+
+      const filteredData = graphData.filter(data => data.codeFile === selectedCodeFile);
+      setGraphSnapshot(filteredData);
     }
   }, [selectedCodeFile, studentData, selectedAssignment]);
 
   useEffect(() => {
     if (selectedSnapshot) {
-      fetch(`${backendUrl}/content?student_id=${studentData.studentId}&assignment_name=${selectedAssignment.name}&code_file_name=${selectedCodeFile}&snapshot_name=${selectedSnapshot}`)
+      fetch(`${backendUrl}/content`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sid: studentData.studentId,
+          aname: selectedAssignment.name,
+          cname: selectedCodeFile,
+          sname: selectedSnapshot,
+        }),
+      })
         .then(response => response.json())
         .then(data => {
           setFileContent(data.content || "파일을 불러올 수 없습니다.");
@@ -239,9 +302,16 @@ const Monitoring = () => {
                 <Typography variant="h6" gutterBottom>
                   코드 변경
                 </Typography>
-                <Typography variant="h4">
-                  {studentData.totalCodeChanges}회
-                </Typography>
+                {loading ? (
+                  <Typography>Loading...</Typography>
+                ) : error ? (
+                  <Typography color="error">{error}</Typography>
+                ) : (
+                  <Typography variant="h4">
+                    {/* {studentData.totalCodeChanges}회 */}
+                    {averageSnapshots}회
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -268,61 +338,70 @@ const Monitoring = () => {
                 </Typography>
                 <Box sx={{ height: 400 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={graphData}>
+                    <LineChart data={graphData} connectNulls={true}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis 
                         dataKey="timestamp" 
                         type="number"
-                        scale="time"
-                        domain={['dataMin', 'dataMax']}
+                        scale="linear"
+                        domain={['auto', 'dataMax']}
+                        tickCount={6}
                         tick={{ fontSize: 12 }}
                         // tickFormatter={(timestamp) => timestamp.toLocaleString()}
                         tickFormatter={(timestamp) => {
-                          return timestamp.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+                          return new Date(timestamp).toLocaleString("ko-KR", { 
+                            month: "2-digit", 
+                            day: "2-digit", 
+                            hour: "2-digit", 
+                            minute: "2-digit" 
+                          });
                         }}
                         tickMargin={10}
                       />
                       <YAxis
                         tick={{ fontSize: 12 }}
                         tickMargin={10}
-                        scale="log"
+                        scale="symlog"
                         allowDataOverflow={true}
-                        domain={[1, 'dataMax']}
+                        domain={[0, 'dataMax']}
                       />
                       <Tooltip 
-                        // formatter={(value, name) => [
-                        //   `${name} - ${value}`,
-                        // ]}
-                        // labelFormatter={(label) => `${label}`}
                         content={({ payload, label }) => {
+                          // payload가 없거나 모든 항목의 값이 null/undefined면 아무것도 렌더링하지 않음
+                          if (!payload || payload.every((entry) => entry.value == null)) {
+                            return null;
+                          }
+                          // X축 값과 정확히 일치하는 데이터만 필터링
+                          const filteredPayload = payload.filter(entry => 
+                            entry.payload.timestamp === label // X축 값(label)과 일치하는 데이터만 표시
+                          );
+
+                          if (filteredPayload.length === 0) {
+                            return null; // 일치하는 데이터가 없으면 툴팁을 숨김
+                          }
+
                           return (
-                            <div className="custom-tooltip" style={{ background: "white", padding: "10px", border: "1px solid #ccc" }}>
-                              <p className="label">{new Date(label).toLocaleString("ko-KR")}</p>
-                              {payload.map((entry, index) => (
-                                <p key={index} style={{ color: entry.color }}>
-                                  {entry.name}: {entry.value}
-                                </p>
-                              ))}
+                            <div
+                              className="custom-tooltip"
+                              style={{
+                                background: "white",
+                                padding: "10px",
+                                border: "1px solid #ccc",
+                              }}
+                            >
+                              <p className="label">
+                                {new Date(label).toLocaleString("ko-KR")}
+                              </p>
+                              {filteredPayload
+                                .map((entry, index) => (
+                                  <p key={index} style={{ color: entry.color }}>
+                                    {entry.name}: {entry.value}
+                                  </p>
+                                ))}
                             </div>
                           );
                         }}
                       />
-                      {/* <Legend 
-                        verticalAlign="top" 
-                        height={36}
-                        formatter={(value) => 
-                          value === 'codeChanges' ? '코드 변경' : '컴파일'
-                        }
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="codeChanges" 
-                       name="코드 변경" 
-                         stroke="#8884d8" 
-                        strokeWidth={2}
-                        dot={{ strokeWidth: 2 }}
-                        activeDot={{ r: 6, strokeWidth: 2 }}
-                      /> */}
                       <Legend />
                       {Array.from(new Set(graphData.map((d) => d.codeFile))).map((codeFile, index) => (
                         <Line 
@@ -389,13 +468,107 @@ const Monitoring = () => {
           </Grid>
         )}
 
+        {selectedCodeFile && (
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  시간별 코드 변화율
+                </Typography>
+                <Box sx={{ height: 400 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={graphsnapshot} connectNulls={true}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis 
+                        dataKey="timestamp" 
+                        type="number"
+                        scale="linear"
+                        domain={['auto', 'dataMax']}
+                        tickCount={6}
+                        tick={{ fontSize: 12 }}
+                        // tickFormatter={(timestamp) => timestamp.toLocaleString()}
+                        tickFormatter={(timestamp) => {
+                          return new Date(timestamp).toLocaleString("ko-KR", { 
+                            month: "2-digit", 
+                            day: "2-digit", 
+                            hour: "2-digit", 
+                            minute: "2-digit" 
+                          });
+                        }}
+                        tickMargin={10}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 12 }}
+                        tickMargin={10}
+                        scale="symlog"
+                        allowDataOverflow={true}
+                        domain={[0, 'dataMax']}
+                      />
+                      <Tooltip 
+                        content={({ payload, label }) => {
+                          // payload가 없거나 모든 항목의 값이 null/undefined면 아무것도 렌더링하지 않음
+                          if (!payload || payload.every((entry) => entry.value == null)) {
+                            return null;
+                          }
+                          // X축 값과 정확히 일치하는 데이터만 필터링
+                          const filteredPayload = payload.filter(entry => 
+                            entry.payload.timestamp === label // X축 값(label)과 일치하는 데이터만 표시
+                          );
+
+                          if (filteredPayload.length === 0) {
+                            return null; // 일치하는 데이터가 없으면 툴팁을 숨김
+                          }
+
+                          return (
+                            <div
+                              className="custom-tooltip"
+                              style={{
+                                background: "white",
+                                padding: "10px",
+                                border: "1px solid #ccc",
+                              }}
+                            >
+                              <p className="label">
+                                {new Date(label).toLocaleString("ko-KR")}
+                              </p>
+                              {filteredPayload
+                                .map((entry, index) => (
+                                  <p key={index} style={{ color: entry.color }}>
+                                    {entry.name}: {entry.value}
+                                  </p>
+                                ))}
+                            </div>
+                          );
+                        }}
+                      />
+                      <Legend />
+                      {Array.from(new Set(graphsnapshot.map((d) => d.codeFile))).map((codeFile, index) => (
+                        <Line 
+                          key={codeFile}
+                          type="monotone"
+                          dataKey="size"
+                          data={graphsnapshot.filter((d) => d.codeFile === codeFile)}
+                          name={codeFile}
+                          stroke={colors[index % colors.length]}
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
         {/* 스냅샷 파일 내용 표시 */}
         {selectedSnapshot && (
           <Grid item xs={12}>
             <Card>
               <CardContent>
                 <Typography variant="h6">스냅샷 파일 내용</Typography>
-                <Box sx={{ whiteSpace: "pre-wrap", backgroundColor: "#f4f4f4", p: 2 }}>
+                <Box sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", backgroundColor: "#f4f4f4", p: 2 }}>
                   {fileContent}
                 </Box>
               </CardContent>
